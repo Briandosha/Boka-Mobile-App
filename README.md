@@ -89,5 +89,8 @@ Remaining:
 1. **Native in-app subscription** (web checkout works today — see above).
 2. **iOS parity**: sounds (`AVAudioPlayer`), local notifications (`UNUserNotificationCenter`), app icon / launch art.
 3. Optional **killed-app push** via FCM or an Android foreground service (only if needed beyond the backgrounded-app case).
+4. **Learn: paginate every tab** (Openings, Middlegame, Tactics, Endgames — Coaching already paged) and add a **Chess Theory** section (original, researched content — shared with the web app; validate lines with `validateOpenings.mjs`).
+5. **Media tab** — play narrated lesson videos. The render pipeline (2D board + cburnett pieces + Piper voice + ffmpeg) is ready and a sample is approved; the ~30-video batch + in-app tab are still to build.
+6. **Leaderboard cleanup** — hide/remove leftover QA test accounts (“Happy QA”, “Claude QA”); `GET /api/leaderboard` currently has no test-account filter.
 
 The architecture (config → api → socket → screens) is set up so each of these is an additive screen/module, not a rewrite.
