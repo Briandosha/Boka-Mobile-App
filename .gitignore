@@ -1,0 +1,15 @@
+.gradle/
+build/
+*.iml
+.idea/
+local.properties
+.kotlin/
+.DS_Store
+xcuserdata/
+*.xcworkspace/xcuserdata/
+Pods/
+
+# JVM crash / replay logs
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
