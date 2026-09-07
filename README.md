@@ -13,13 +13,13 @@ All three are centralised in `composeApp/src/commonMain/kotlin/ke/co/brivont/bok
 composeApp/
   src/commonMain/kotlin/ke/co/brivont/boka/
     App.kt                     # root + navigation
-    core/Core.kt               # config, Ktor client, token session, key-value store (expect)
+    core/Core.kt               # config, Ktor client, token session (+ forced-logout signal), key-value store (expect)
     core/JwtUser.kt            # recover user id/name from the stored JWT on cold start
     data/Models.kt             # @Serializable DTOs
     data/Api.kt                # AuthApi + GameApi (REST)
     data/GameSocket.kt         # live game / coach WebSocket
-    ui/theme/Theme.kt          # Boka dark+gold palette & typography
-    ui/board/ChessBoard.kt     # FEN renderer + tap-to-move
+    ui/theme/Theme.kt          # Boka navy+brass palette (Steel light) & typography
+    ui/board/ChessBoard.kt     # FEN renderer + tap-to-move, last-move/hint highlights
     ui/*.kt                    # Auth, Dashboard, Leaderboard, MyGames, Game, Coach, Analysis
   src/androidMain/             # MainActivity, manifest, SharedPreferences store
   src/iosMain/                 # MainViewController, NSUserDefaults store
@@ -37,11 +37,15 @@ iosApp/                        # SwiftUI wrapper (needs Xcode project — see be
 | Game review / analysis (queue + poll + step-through) | ✅ working |
 | Play Online (live multiplayer via WebSocket, tap-to-move + legal-move dots) | ✅ working (server-validated) |
 | **Spectate** live games (lobby list + read-only live board) | ✅ `ui/SpectateScreen.kt` |
-| **Auth token refresh** (WS 4001 + REST 401 → refresh & retry) | ✅ `AuthApi.refresh` |
-| Boka theme (dark + gold) | ✅ |
+| **Auth token refresh + forced logout** (WS 4001 / REST 401 → refresh & retry; definitive failure → sign-out; proactive refresh on launch) | ✅ `AuthApi.refresh` · `Session.expire` |
+| Boka theme (navy + brass; Steel light) | ✅ `ui/theme/Theme.kt` |
 | **On-device chess engine** (legal moves, make-move, check/mate, SAN) | ✅ `chess/Chess.kt` |
 | **Professional board** (cburnett vector pieces, coords, gold highlights, check) | ✅ `ui/board/{ChessBoard,Pieces}.kt` |
-| **Coach vs Stockfish** (full offline play, coaching, eval, move scrubbing) | ✅ working |
+| **Coach vs Stockfish** (play, coaching, eval bar, move scrubbing) | ✅ working |
+| **Coach hint** (tap → server Stockfish best move, highlighted green on the board) | ✅ `coach_hint` · `CoachScreen.kt` |
+| **Coach “change opponent’s move”** (rewind the engine's reply, set any legal move for the opponent to train responses; Cancel restores) | ✅ `CoachScreen.kt` |
+| **Resume / rejoin in-progress game** (loader + guard against starting a second game; rejoin · forfeit · no-penalty abort) | ✅ `ui/GameScreen.kt` |
+| **Pull-to-refresh** (Home: re-check / renew the session) | ✅ `ui/DashboardScreen.kt` |
 | Move scrubbing in **live** games (⏮ ‹ › Live) | ✅ `ui/GameScreen.kt` |
 | **Openings study** (curated lines, SAN replay, ideas) | ✅ `ui/OpeningsScreen.kt` + `data/Openings.kt` |
 | **Smooth board animation** (moved piece slides, no teleport) | ✅ `ui/board/ChessBoard.kt` |
@@ -79,12 +83,11 @@ Premium upsell currently routes to the existing **web** payment flow (`App.kt` `
 Kotlin 2.1.0 · Compose Multiplatform 1.7.3 · AGP 8.7.3 · Ktor 3.0.3 · min SDK 26.
 
 ## Roadmap
-Done: on-device engine · professional cburnett board · smooth slide animation · Coach vs Stockfish · move navigation (live + coach) · openings study · sounds (Android) · WebSocket "your move" notifications (Android) · iOS Xcode project.
+Done: navy+brass theme (Steel light) + transparent launcher icon · on-device engine · professional cburnett board · smooth slide animation · Coach vs Stockfish with eval bar, **best-move hint**, and **“change opponent’s move”** training · resume/rejoin in-progress games · pull-to-refresh + hardened token-refresh/forced-logout · move navigation (live + coach) · openings/coaching study · sounds (Android) · WebSocket "your move" notifications (Android) · iOS Xcode project.
 
 Remaining:
 1. **Native in-app subscription** (web checkout works today — see above).
 2. **iOS parity**: sounds (`AVAudioPlayer`), local notifications (`UNUserNotificationCenter`), app icon / launch art.
 3. Optional **killed-app push** via FCM or an Android foreground service (only if needed beyond the backgrounded-app case).
-4. Reconnect/resume an in-progress game (`resume_game`) and spectating (`spectate`).
 
 The architecture (config → api → socket → screens) is set up so each of these is an additive screen/module, not a rewrite.
