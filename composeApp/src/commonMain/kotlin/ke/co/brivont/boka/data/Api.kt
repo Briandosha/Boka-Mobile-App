@@ -52,6 +52,15 @@ object AuthApi {
         return res
     }
 
+    /** Request a password-reset email. Backend always returns 200 (never reveals
+     *  whether the address exists); the user completes the reset via the emailed link. */
+    suspend fun forgotPassword(email: String): Boolean = try {
+        httpClient.post(Config.AUTH + "api/auth/forgot-password") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("email" to email))
+        }.status.isSuccess()
+    } catch (e: Throwable) { false }
+
     // Refresh tokens are ROTATED server-side: the first refresh invalidates the old
     // pair, so concurrent refreshes (socket connect + REST 401 retry) would burn a
     // valid token and log the user out. Single-flight everything through a mutex.

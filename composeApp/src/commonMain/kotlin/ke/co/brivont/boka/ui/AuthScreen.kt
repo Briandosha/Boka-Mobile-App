@@ -50,6 +50,7 @@ fun AuthScreen(onAuthed: (User) -> Unit) {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showPassword by remember { mutableStateOf(false) }
+    var forgotMsg by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     fun submit() {
@@ -107,6 +108,25 @@ fun AuthScreen(onAuthed: (User) -> Unit) {
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), colors = fieldColors)
 
+        if (isLogin) {
+            TextButton(
+                onClick = {
+                    if (email.isBlank()) {
+                        forgotMsg = "Enter your email above first."
+                    } else {
+                        forgotMsg = "Sending\u2026"
+                        scope.launch {
+                            val ok = AuthApi.forgotPassword(email.trim())
+                            forgotMsg = if (ok) "If that email is registered, a reset link has been sent. Check your inbox."
+                            else "Couldn\u2019t send right now \u2014 please try again."
+                        }
+                    }
+                },
+                modifier = Modifier.align(Alignment.End),
+            ) { Text("Forgot password?", color = Boka.goldBright, fontSize = 12.sp) }
+        }
+        forgotMsg?.let { Text(it, color = Boka.textMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp)) }
+
         error?.let { Text(it, color = Boka.danger, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp)) }
 
         Spacer(Modifier.height(16.dp))
@@ -116,7 +136,7 @@ fun AuthScreen(onAuthed: (User) -> Unit) {
             enabled = !loading && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp),
         )
-        TextButton({ isLogin = !isLogin; error = null }) {
+        TextButton({ isLogin = !isLogin; error = null; forgotMsg = null }) {
             Text(if (isLogin) "New here? Create an account" else "Have an account? Sign in", color = Boka.goldBright)
         }
     }
