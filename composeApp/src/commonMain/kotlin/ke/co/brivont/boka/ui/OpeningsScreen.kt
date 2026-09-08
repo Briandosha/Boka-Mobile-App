@@ -40,6 +40,7 @@ import ke.co.brivont.boka.chess.squareName
 import ke.co.brivont.boka.data.COACHING
 import ke.co.brivont.boka.data.ENDGAMES
 import ke.co.brivont.boka.data.MIDDLEGAME
+import ke.co.brivont.boka.data.THEORY
 import ke.co.brivont.boka.data.OPENINGS
 import ke.co.brivont.boka.data.TACTICS
 import ke.co.brivont.boka.ui.board.ChessBoard
@@ -93,6 +94,13 @@ private fun allStudyItems(): List<StudyItem> =
     } + MIDDLEGAME.map { m ->
         StudyItem(
             id = "m_${m.id}", name = m.name, tag = m.theme, kind = "Middlegame",
+            summary = m.summary, ideas = m.ideas,
+            lines = listOf(StudyLine("The line", m.line, "")),
+            startFen = null, orientation = "white",
+        )
+    } + THEORY.map { m ->
+        StudyItem(
+            id = "th_${m.id}", name = m.name, tag = m.theme, kind = "Theory",
             summary = m.summary, ideas = m.ideas,
             lines = listOf(StudyLine("The line", m.line, "")),
             startFen = null, orientation = "white",
@@ -178,6 +186,7 @@ fun OpeningsScreen() {
                         CategoryChip("Coaching", category == "Coaching") { category = "Coaching" }
                         CategoryChip("Openings", category == "Opening") { category = "Opening" }
                         CategoryChip("Middlegame", category == "Middlegame") { category = "Middlegame" }
+                        CategoryChip("Theory", category == "Theory") { category = "Theory" }
                         CategoryChip("Tactics", category == "Tactic") { category = "Tactic" }
                         CategoryChip("Endgames", category == "Endgame") { category = "Endgame" }
                     }
