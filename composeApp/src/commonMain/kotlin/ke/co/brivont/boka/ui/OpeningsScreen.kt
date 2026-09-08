@@ -146,7 +146,9 @@ fun OpeningsScreen() {
     val items = remember { allStudyItems() }
     var query by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("Coaching") }
-    var coachPage by remember { mutableStateOf(0) }
+    // List page for the active tab; re-initialised (reset to 0) whenever the
+    // category or search text changes, so every tab starts on page 1.
+    var page by remember(category, query) { mutableStateOf(0) }
     var selectedId by remember { mutableStateOf<String?>(null) }
     var lineIndex by remember { mutableStateOf(0) }
     var ply by remember { mutableStateOf(-1) }
@@ -173,7 +175,7 @@ fun OpeningsScreen() {
 
                 if (q.isEmpty()) {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CategoryChip("Coaching", category == "Coaching") { category = "Coaching"; coachPage = 0 }
+                        CategoryChip("Coaching", category == "Coaching") { category = "Coaching" }
                         CategoryChip("Openings", category == "Opening") { category = "Opening" }
                         CategoryChip("Middlegame", category == "Middlegame") { category = "Middlegame" }
                         CategoryChip("Tactics", category == "Tactic") { category = "Tactic" }
@@ -186,22 +188,21 @@ fun OpeningsScreen() {
                     Text("No matches for \"$query\".", color = Boka.textMuted, fontSize = 13.sp,
                         modifier = Modifier.padding(vertical = 24.dp))
                 }
-                // Coaching is paginated (it grows large); other categories scroll.
-                val paged = category == "Coaching" && q.isEmpty()
+                // Every tab is paginated (mirrors the web Learn module).
                 val pageSize = 6
                 val pages = ((list.size + pageSize - 1) / pageSize).coerceAtLeast(1)
-                val page = coachPage.coerceIn(0, pages - 1)
-                val shown = if (paged) list.drop(page * pageSize).take(pageSize) else list
+                val pageIdx = page.coerceIn(0, pages - 1)
+                val shown = list.drop(pageIdx * pageSize).take(pageSize)
                 for (item in shown) {
                     StudyRow(item, showKind = q.isNotEmpty()) { selectedId = item.id; ply = -1; lineIndex = 0 }
                 }
-                if (paged && pages > 1) {
+                if (pages > 1) {
                     Spacer(Modifier.height(6.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SecondaryButton("‹ Prev", { if (page > 0) coachPage = page - 1 }, Modifier.weight(1f))
-                        Text("Page ${page + 1} of $pages", color = Boka.textFaint, fontSize = 12.sp)
-                        SecondaryButton("Next ›", { if (page < pages - 1) coachPage = page + 1 }, Modifier.weight(1f))
+                        SecondaryButton("‹ Prev", { if (pageIdx > 0) page = pageIdx - 1 }, Modifier.weight(1f))
+                        Text("Page ${pageIdx + 1} of $pages", color = Boka.textFaint, fontSize = 12.sp)
+                        SecondaryButton("Next ›", { if (pageIdx < pages - 1) page = pageIdx + 1 }, Modifier.weight(1f))
                     }
                 }
                 Spacer(Modifier.height(20.dp))
