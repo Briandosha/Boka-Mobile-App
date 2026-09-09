@@ -47,6 +47,8 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.media3.exoplayer)   // in-app lesson video playback
+            implementation(libs.androidx.media3.ui)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
