@@ -2,6 +2,7 @@ package ke.co.brivont.boka.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -125,10 +126,12 @@ fun MediaScreen(onBack: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
             Text("Narrated walk-throughs of the Coaching lessons and tactical patterns.",
                 color = Boka.textMuted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val cats = remember(videos) { videos.map { it.category }.distinct().sorted() }
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CategoryChip("All (${videos.size})", filter == "all") { filter = "all" }
-                CategoryChip("Coaching", filter == "coaching") { filter = "coaching" }
-                CategoryChip("Tactics", filter == "tactics") { filter = "tactics" }
+                cats.forEach { c ->
+                    CategoryChip(c.replaceFirstChar { it.uppercase() }, filter == c) { filter = c }
+                }
             }
             Spacer(Modifier.height(12.dp))
             when {
