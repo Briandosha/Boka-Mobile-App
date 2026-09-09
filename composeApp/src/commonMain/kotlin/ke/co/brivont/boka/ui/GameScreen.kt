@@ -222,12 +222,12 @@ fun GameScreen(onBack: () -> Unit) {
                     }
                 }
                 "game_created" -> {
-                    gameId = msg["gameId"]?.jsonPrimitive?.content; myColor = "white"
+                    gameId = msg["gameId"]?.jsonPrimitive?.content; myColor = msg["color"]?.jsonPrimitive?.content ?: "white"
                     msg.extractFen()?.let { history = listOf(it); lastMoves = listOf(null) }
                     msg.clocks()?.let { whiteTime = it.first; blackTime = it.second }
                 }
                 "game_joined" -> {
-                    gameId = msg["gameId"]?.jsonPrimitive?.content; myColor = "black"
+                    gameId = msg["gameId"]?.jsonPrimitive?.content; myColor = msg["color"]?.jsonPrimitive?.content ?: "black"
                     msg.extractFen()?.let { history = listOf(it); lastMoves = listOf(null) }
                     msg.clocks()?.let { whiteTime = it.first; blackTime = it.second }
                     opponentJoined = true
@@ -292,7 +292,7 @@ fun GameScreen(onBack: () -> Unit) {
                             val headline = when (info.won) {
                                 true -> "You won — $reason!"
                                 false -> if (reason == "timeout") "Time's up — you lost on time." else "You lost — $reason."
-                                null -> "Draw ($reason)."
+                                null -> if (reason == "aborted") "Game aborted — no move played." else "Draw ($reason)."
                             }
                             postLocalNotification("Boka ♟", headline)
                         }
@@ -670,13 +670,14 @@ private fun androidx.compose.foundation.layout.BoxScope.GameOverOverlay(info: En
         info.reason == "timeout" -> "⏰" to "Opponent flagged!"
         info.reason == "checkmate" -> "♛" to "Checkmate"
         info.reason == "resignation" -> "🏳" to "Resignation"
+        info.reason == "aborted" -> "⛔" to "Game aborted"
         info.won == null -> "🤝" to "Draw"
         else -> "🏁" to "Game over"
     }
     val subtitle = when (info.won) {
         true -> if (info.reason == "timeout") "You win — your opponent ran out of time." else "You won — ${info.reason}."
         false -> if (info.reason == "timeout") "You lost on time." else "You lost — ${info.reason}."
-        null -> "Game drawn (${info.reason})."
+        null -> if (info.reason == "aborted") "No move was played — no rating change." else "Game drawn (${info.reason})."
     }
     val accent = when (info.won) { true -> Boka.success; false -> Boka.danger; null -> Boka.textMuted }
 
