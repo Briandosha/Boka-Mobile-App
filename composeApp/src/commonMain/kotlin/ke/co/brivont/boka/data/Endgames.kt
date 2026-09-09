@@ -134,18 +134,6 @@ val ENDGAMES: List<Endgame> = listOf(
         line = "Kf8 Kd7 Kf7 e6+ Kf8 e7+ Kf7 e8=Q+",
     ),
     Endgame(
-        id = "lucena", name = "Lucena Position (Building the Bridge)",
-        fen = "2K1k3/2P5/8/8/8/8/1r6/3R4 w - - 0 1",
-        summary = "The fundamental winning method in rook endings: pawn on the 7th, king in front, and a rook \"bridge\" that shelters the king from checks.",
-        ideas = listOf(
-            "The king must step out from in front of its pawn, but the enemy rook checks it endlessly — the bridge solves that.",
-            "Put your rook on the 4th rank (Rd4): it will interpose and block the checks (Rc4) as your king walks up.",
-            "March the king toward the checks (Kb7-a6) while the rook prepares; then the bridge lets the pawn queen.",
-            "If you can reach the Lucena, a rook-and-pawn ending with the pawn on the 7th is winning.",
-        ),
-        line = "Rd4 Rc2 Kb7 Rb2+ Ka6 Rc2 Rc4 Rb2 c8=Q+",
-    ),
-    Endgame(
         id = "philidor", name = "Philidor Position (the Drawing Defence)",
         fen = "4k3/R7/8/4P3/4K3/8/8/5r2 w - - 0 1",
         summary = "The defender’s key drawing technique in rook endings: hold the 3rd rank, then check from behind once the pawn advances.",
