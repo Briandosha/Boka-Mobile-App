@@ -340,7 +340,12 @@ fun GameScreen(onBack: () -> Unit) {
                 playSfx(if (next.inCheck()) "check" else if (capture) "capture" else "move")
             }
             socket.sendType("make_move", "gameId" to gameId,
-                "move" to buildJsonObject { put("from", JsonPrimitive(cur)); put("to", JsonPrimitive(sq)) })
+                "move" to buildJsonObject {
+                    put("from", JsonPrimitive(cur)); put("to", JsonPrimitive(sq))
+                    // MUST send the promotion piece or the server rejects the move (pawn to last
+                    // rank needs one) — the local optimistic move already queens, so mirror that.
+                    if (promo != null) put("promotion", JsonPrimitive(promo.toString()))
+                })
         } else if (myTurn && pos!!.legalMoves().any { it.from == nameToSquare(sq) }) {
             // Tapped another of my own movable pieces — reselect it.
             selected = sq
