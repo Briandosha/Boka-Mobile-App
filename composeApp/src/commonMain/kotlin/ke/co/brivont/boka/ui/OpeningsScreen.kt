@@ -313,7 +313,7 @@ private fun SearchBox(value: String, onChange: (String) -> Unit) {
 }
 
 @Composable
-private fun CategoryChip(label: String, active: Boolean, onClick: () -> Unit) {
+internal fun CategoryChip(label: String, active: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.clip(RoundedCornerShape(20.dp))
             .background(if (active) Boka.gold else Boka.surface)

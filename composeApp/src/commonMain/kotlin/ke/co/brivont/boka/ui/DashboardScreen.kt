@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Visibility
@@ -71,6 +72,7 @@ fun HomeScreen(
     onLearn: () -> Unit,
     onRanks: () -> Unit,
     onGames: () -> Unit,
+    onMedia: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().background(Boka.ground)) {
         Row(
@@ -131,6 +133,15 @@ fun HomeScreen(
                 GridTile("Ranks", "Top players\n+ your rating", Icons.Filled.EmojiEvents, Modifier.weight(1f), onRanks)
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            // Wide tile — narrated lesson videos.
+            WideTile(
+                title = "Lesson Videos",
+                subtitle = "Narrated Coaching & Tactics walk-throughs",
+                icon = Icons.Filled.OndemandVideo,
+                onClick = onMedia,
+            )
             Spacer(Modifier.height(12.dp))
 
             // Wide tile — game history.
