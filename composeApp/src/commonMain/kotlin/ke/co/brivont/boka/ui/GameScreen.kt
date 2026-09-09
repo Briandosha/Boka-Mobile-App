@@ -311,6 +311,31 @@ fun GameScreen(onBack: () -> Unit) {
         history = listOf(START_FEN); lastMoves = listOf(null); viewPly = null
     }
 
+    var pendingPromo by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    fun sendMove(from: String, to: String, promo: Char?) {
+        val curFen = history.last()
+        val pos = runCatching { Position.fromFen(curFen) }.getOrNull() ?: return
+        val next = pos.makeMove(nameToSquare(from), nameToSquare(to), promo) ?: return
+        val newFen = next.toFen()
+        val capture = pieceCount(newFen) < pieceCount(curFen)
+        history = history + newFen
+        lastMoves = lastMoves + (from to to)
+        viewPly = null
+        playSfx(if (next.inCheck()) "check" else if (capture) "capture" else "move")
+        socket.sendType("make_move", "gameId" to gameId,
+            "move" to buildJsonObject {
+                put("from", JsonPrimitive(from)); put("to", JsonPrimitive(to))
+                if (promo != null) put("promotion", JsonPrimitive(promo.toString()))
+            })
+    }
+
+    fun doPromote(piece: Char) {
+        val pp = pendingPromo ?: return
+        pendingPromo = null
+        sendMove(pp.first, pp.second, piece)
+    }
+
     fun tap(sq: String) {
         if (reviewing || ended != null || gameId == null || myColor == null) return
         val cur = selected
@@ -325,27 +350,14 @@ fun GameScreen(onBack: () -> Unit) {
             .firstOrNull { it.from == nameToSquare(cur) && it.to == nameToSquare(sq) } else null
 
         if (legal != null) {
-            // Optimistic move: apply locally the instant it's tapped so the piece moves
-            // with ZERO network latency (this was the "laggy" feel — the board used to
-            // wait for the server to echo the move back). The server's move_made is
-            // deduped against this. Promotions default to queen to match the server.
-            val promo = if (legal.promo != null) 'q' else null
-            val next = pos!!.makeMove(legal.from, legal.to, promo)
-            if (next != null) {
-                val newFen = next.toFen()
-                val capture = pieceCount(newFen) < pieceCount(curFen)
-                history = history + newFen
-                lastMoves = lastMoves + (cur to sq)
-                viewPly = null
-                playSfx(if (next.inCheck()) "check" else if (capture) "capture" else "move")
+            if (legal.promo != null) {
+                // Ask which piece to promote to (queen/rook/bishop/knight) before moving.
+                pendingPromo = cur to sq
+            } else {
+                // Optimistic move: apply + send immediately for zero-latency feel; the
+                // server's move_made is deduped against this.
+                sendMove(cur, sq, null)
             }
-            socket.sendType("make_move", "gameId" to gameId,
-                "move" to buildJsonObject {
-                    put("from", JsonPrimitive(cur)); put("to", JsonPrimitive(sq))
-                    // MUST send the promotion piece or the server rejects the move (pawn to last
-                    // rank needs one) — the local optimistic move already queens, so mirror that.
-                    if (promo != null) put("promotion", JsonPrimitive(promo.toString()))
-                })
         } else if (myTurn && pos!!.legalMoves().any { it.from == nameToSquare(sq) }) {
             // Tapped another of my own movable pieces — reselect it.
             selected = sq
@@ -393,6 +405,29 @@ fun GameScreen(onBack: () -> Unit) {
                 onLive = { viewPly = null },
                 onResign = { socket.sendType("resign", "gameId" to gameId); ended = EndInfo("resignation", won = false) },
                 onDone = onBack,
+            )
+        }
+
+        // Promotion picker: choose the piece for a pawn reaching the last rank.
+        pendingPromo?.let {
+            val white = myColor == "white"
+            AlertDialog(
+                onDismissRequest = { pendingPromo = null },
+                title = { Text("Promote to", color = Boka.text, fontWeight = FontWeight.Bold) },
+                text = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        for (ch in listOf('q', 'r', 'b', 'n')) {
+                            Box(
+                                Modifier.size(56.dp)
+                                    .background(Boka.ground, RoundedCornerShape(10.dp))
+                                    .clickable { doPromote(ch) },
+                                contentAlignment = Alignment.Center,
+                            ) { Text(promoGlyph(ch, white), color = Boka.text, fontSize = 34.sp) }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = { TextButton(onClick = { pendingPromo = null }) { Text("Cancel", color = Boka.textMuted) } },
             )
         }
 
@@ -697,4 +732,11 @@ private fun PlayerBar(name: String, color: String, seconds: Int, active: Boolean
             )
         }
     }
+}
+
+private fun promoGlyph(ch: Char, white: Boolean): String = when (ch) {
+    'q' -> if (white) "♕" else "♛"
+    'r' -> if (white) "♖" else "♜"
+    'b' -> if (white) "♗" else "♝"
+    else -> if (white) "♘" else "♞"
 }
