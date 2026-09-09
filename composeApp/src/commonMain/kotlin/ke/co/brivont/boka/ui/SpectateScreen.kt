@@ -40,6 +40,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 private data class LiveGame(val id: String, val white: String, val black: String, val moves: Int, val watchers: Int)
@@ -103,7 +104,7 @@ fun SpectateScreen(onBack: () -> Unit) {
                 }
                 "game_ended" -> {
                     val reason = msg["reason"]?.jsonPrimitive?.content ?: "over"
-                    val winner = msg["winner"]?.jsonPrimitive?.content
+                    val winner = msg["winner"]?.jsonPrimitive?.contentOrNull
                     ended = if (winner == null) "Draw ($reason)" else "$winner wins — $reason"
                 }
             }

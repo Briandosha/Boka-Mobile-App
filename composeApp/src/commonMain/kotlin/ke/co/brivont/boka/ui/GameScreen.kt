@@ -284,7 +284,7 @@ fun GameScreen(onBack: () -> Unit) {
                         mode = restart
                     } else {
                         val reason = msg["reason"]?.jsonPrimitive?.content ?: "over"
-                        val winner = msg["winner"]?.jsonPrimitive?.content
+                        val winner = msg["winner"]?.jsonPrimitive?.contentOrNull
                         val info = EndInfo(reason, won = winner?.let { it == myColor })
                         ended = info
                         playSfx("notify")
