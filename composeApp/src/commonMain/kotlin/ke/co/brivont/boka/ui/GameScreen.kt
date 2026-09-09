@@ -323,10 +323,13 @@ fun GameScreen(onBack: () -> Unit) {
         lastMoves = lastMoves + (from to to)
         viewPly = null
         playSfx(if (next.inCheck()) "check" else if (capture) "capture" else "move")
+        // The server expects the promotion as a FULL WORD (queen/rook/bishop/knight);
+        // a single char is rejected as "Invalid promotion piece".
+        val promoWord = when (promo) { 'q' -> "queen"; 'r' -> "rook"; 'b' -> "bishop"; 'n' -> "knight"; else -> null }
         socket.sendType("make_move", "gameId" to gameId,
             "move" to buildJsonObject {
                 put("from", JsonPrimitive(from)); put("to", JsonPrimitive(to))
-                if (promo != null) put("promotion", JsonPrimitive(promo.toString()))
+                if (promoWord != null) put("promotion", JsonPrimitive(promoWord))
             })
     }
 
