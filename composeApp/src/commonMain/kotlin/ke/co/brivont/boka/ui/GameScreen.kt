@@ -400,13 +400,14 @@ fun GameScreen(onBack: () -> Unit) {
             !opponentJoined && ended == null -> WaitingView(mode!!, onCancel = ::cancel)
             else -> PlayingView(
                 shownFen, liveFen, myColor, selected, lastMoves[currentIndex], reviewing, ended, gameId != null,
-                whiteTime, blackTime, maxIndex, currentIndex,
+                whiteTime, blackTime, maxIndex, currentIndex, abortable = history.size <= 2,
                 onTap = ::tap,
                 onFirst = { viewPly = 0 },
                 onPrev = { viewPly = (currentIndex - 1).coerceAtLeast(0) },
                 onNext = { val n = currentIndex + 1; viewPly = if (n >= maxIndex) null else n },
                 onLive = { viewPly = null },
                 onResign = { socket.sendType("resign", "gameId" to gameId); ended = EndInfo("resignation", won = false) },
+                onAbort = { socket.sendType("abort_game", "gameId" to gameId); ended = EndInfo("aborted", won = null) },
                 onDone = onBack,
             )
         }
@@ -593,9 +594,9 @@ private fun WaitingView(tc: TimeControl, onCancel: () -> Unit) {
 private fun PlayingView(
     shownFen: String, liveFen: String, myColor: String?, selected: String?,
     lastMove: Pair<String, String>?, reviewing: Boolean, ended: EndInfo?, hasGame: Boolean,
-    whiteTime: Int, blackTime: Int, maxIndex: Int, currentIndex: Int,
+    whiteTime: Int, blackTime: Int, maxIndex: Int, currentIndex: Int, abortable: Boolean,
     onTap: (String) -> Unit, onFirst: () -> Unit, onPrev: () -> Unit, onNext: () -> Unit,
-    onLive: () -> Unit, onResign: () -> Unit, onDone: () -> Unit,
+    onLive: () -> Unit, onResign: () -> Unit, onAbort: () -> Unit, onDone: () -> Unit,
 ) {
     val whiteToMove = remember(liveFen) { runCatching { Position.fromFen(liveFen).whiteToMove }.getOrDefault(true) }
     val iAmWhite = myColor != "black"
@@ -643,7 +644,10 @@ private fun PlayingView(
         }
         if (ended == null && hasGame) {
             Spacer(Modifier.height(10.dp))
-            SecondaryButton("🏳 Resign", onResign, Modifier.fillMaxWidth())
+            // Before any real move the game can be left with no result (the server
+            // aborts it), so offer "Quit" instead of a rating-costing "Resign".
+            if (abortable) SecondaryButton("✕ Quit", onAbort, Modifier.fillMaxWidth())
+            else SecondaryButton("🏳 Resign", onResign, Modifier.fillMaxWidth())
         }
     }
 }
