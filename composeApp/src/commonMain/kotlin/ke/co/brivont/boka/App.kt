@@ -97,6 +97,17 @@ fun App() {
                 }
             }
 
+            // Phone back button should walk the in-app hierarchy, not drop out of the
+            // app: close a full-screen flow first, then fall back to the Home tab, and
+            // only let the system exit when we're already Home with nothing open (or on
+            // the sign-in screen, where there's nowhere to go back to).
+            SystemBackHandler(enabled = user != null && (route != null || tab != Tab.Home)) {
+                when {
+                    route != null -> route = null
+                    tab != Tab.Home -> tab = Tab.Home
+                }
+            }
+
             val u = user
             when {
                 u == null -> AuthScreen(onAuthed = { user = it; tab = Tab.Home; route = null })
