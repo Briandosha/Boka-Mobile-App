@@ -212,7 +212,7 @@ private fun ModeChip(label: String, active: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .clip(RoundedCornerShape(9.dp))
-            .background(if (active) Boka.accent else Boka.surface)
+            .background(if (active) Boka.gold else Boka.surface)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center,
