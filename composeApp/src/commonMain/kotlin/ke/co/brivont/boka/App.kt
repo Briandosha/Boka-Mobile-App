@@ -54,6 +54,7 @@ import ke.co.brivont.boka.ui.GameScreen
 import ke.co.brivont.boka.ui.HomeScreen
 import ke.co.brivont.boka.ui.LeaderboardScreen
 import ke.co.brivont.boka.ui.MediaScreen
+import ke.co.brivont.boka.ui.PuzzleScreen
 import ke.co.brivont.boka.ui.MyGamesScreen
 import ke.co.brivont.boka.ui.OpeningsScreen
 import ke.co.brivont.boka.ui.ProfileScreen
@@ -76,6 +77,7 @@ private sealed interface Route {
     data object Coach : Route
     data object Spectate : Route
     data object Media : Route
+    data object Puzzles : Route
     data class Analysis(val pgn: String, val color: String) : Route
 }
 
@@ -117,6 +119,7 @@ fun App() {
                     Route.Coach -> CoachScreen(onBack = { route = null })
                     Route.Spectate -> SpectateScreen(onBack = { route = null })
                     Route.Media -> MediaScreen(onBack = { route = null })
+                    Route.Puzzles -> PuzzleScreen(onBack = { route = null })
                     is Route.Analysis -> AnalysisScreen(
                         pgn = r.pgn, playerColor = r.color,
                         onBack = { route = null },
@@ -137,6 +140,7 @@ fun App() {
                                 onRanks = { tab = Tab.Ranks },
                                 onGames = { tab = Tab.Games },
                                 onMedia = { route = Route.Media },
+                                onPuzzles = { route = Route.Puzzles },
                             )
                             Tab.Games -> MyGamesScreen(
                                 user = u,

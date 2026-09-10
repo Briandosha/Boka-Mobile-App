@@ -134,3 +134,45 @@ object GameApi {
     suspend fun pollAnalysis(jobId: String): AnalyzeResponse =
         authed { httpClient.get(Config.API + "/api/analyze-full-game/$jobId") { bearer() } }.body()
 }
+
+sealed class PuzzleResult {
+    data class Loaded(val p: PuzzleDto) : PuzzleResult()
+    object Limit : PuzzleResult()
+    object Empty : PuzzleResult()
+    object Error : PuzzleResult()
+}
+
+object PuzzleApi {
+    private suspend fun fetch(path: String): PuzzleResult = try {
+        val res = authed { httpClient.get(Config.API + path) { bearer() } }
+        when {
+            res.status.isSuccess() -> PuzzleResult.Loaded(res.body())
+            res.status.value == 402 -> PuzzleResult.Limit
+            res.status.value == 503 -> PuzzleResult.Empty
+            else -> PuzzleResult.Error
+        }
+    } catch (e: Throwable) {
+        PuzzleResult.Error
+    }
+
+    suspend fun next(): PuzzleResult = fetch("/api/puzzles/next")
+    suspend fun daily(): PuzzleResult = fetch("/api/puzzles/daily")
+
+    suspend fun progress(): PuzzleProgressDto? = try {
+        authed { httpClient.get(Config.API + "/api/puzzles/progress") { bearer() } }.body()
+    } catch (e: Throwable) {
+        null
+    }
+
+    suspend fun attempt(id: String, solved: Boolean): AttemptResultDto? = try {
+        authed {
+            httpClient.post(Config.API + "/api/puzzles/attempt") {
+                bearer()
+                contentType(ContentType.Application.Json)
+                setBody(AttemptBody(id, solved))
+            }
+        }.body()
+    } catch (e: Throwable) {
+        null
+    }
+}

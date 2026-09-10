@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.OndemandVideo
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -73,6 +74,7 @@ fun HomeScreen(
     onRanks: () -> Unit,
     onGames: () -> Unit,
     onMedia: () -> Unit,
+    onPuzzles: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().background(Boka.ground)) {
         Row(
@@ -120,6 +122,15 @@ fun HomeScreen(
                 onClick = onPlay,
             )
 
+            Spacer(Modifier.height(12.dp))
+
+            // Puzzles — the daily-habit engine (free).
+            WideTile(
+                title = "Puzzles",
+                subtitle = "Daily tactics · rating & streak",
+                icon = Icons.Filled.Extension,
+                onClick = onPuzzles,
+            )
             Spacer(Modifier.height(12.dp))
 
             // Editorial 2×2 grid.

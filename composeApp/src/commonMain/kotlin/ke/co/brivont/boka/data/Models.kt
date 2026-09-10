@@ -95,3 +95,39 @@ data class AnalyzeResponse(
 
 @Serializable
 data class AnalyzeRequest(val pgn: String)
+
+@Serializable
+data class PuzzleDto(
+    val id: String = "",
+    val fen: String = "",
+    val moves: String = "",
+    val rating: Int = 1500,
+    val themes: String = "",
+    val puzzleRating: Int? = null,
+    val streak: Int? = null,
+    val solvedToday: Boolean? = null,
+)
+
+@Serializable
+data class PuzzleProgressDto(
+    val puzzleRating: Int = 1200,
+    val streak: Int = 0,
+    val bestStreak: Int = 0,
+    val solved: Int = 0,
+    val failed: Int = 0,
+    val rushBest: Int = 0,
+    val solvedToday: Boolean = false,
+)
+
+@Serializable
+data class AttemptResultDto(
+    val puzzleRating: Int = 1200,
+    val delta: Int = 0,
+    val streak: Int = 0,
+    val bestStreak: Int = 0,
+    val solved: Int = 0,
+    val failed: Int = 0,
+)
+
+@Serializable
+data class AttemptBody(val puzzleId: String, val solved: Boolean)
