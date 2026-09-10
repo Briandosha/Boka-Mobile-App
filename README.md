@@ -19,7 +19,7 @@ composeApp/
     data/Api.kt                # AuthApi + GameApi (REST)
     data/GameSocket.kt         # live game / coach WebSocket
     ui/theme/Theme.kt          # Boka navy+brass palette (Steel light) & typography
-    ui/board/ChessBoard.kt     # FEN renderer + tap-to-move, last-move/hint highlights
+    ui/board/ChessBoard.kt     # FEN renderer, tap-to-move (+ tap-rook castling), sliding animation, last-move/hint highlights
     ui/*.kt                    # Auth, Dashboard, Leaderboard, MyGames, Game, Coach, Analysis
   src/androidMain/             # MainActivity, manifest, SharedPreferences store
   src/iosMain/                 # MainViewController, NSUserDefaults store
@@ -51,7 +51,10 @@ iosApp/                        # SwiftUI wrapper (needs Xcode project — see be
 | **Chess Theory** tab (tempo, space, outposts, king safety, prophylaxis, two weaknesses…) | ✅ `data/Theory.kt` |
 | **Learn pagination** on every tab (6/page, resets on tab/search) | ✅ `ui/OpeningsScreen.kt` |
 | **Lesson Videos** (Media tab; in-app fullscreen + auto-rotate player, Kokoro narration) | ✅ `ui/MediaScreen.kt` + `VideoPlayer.android.kt` (Media3) |
-| **Smooth board animation** (moved piece slides, no teleport) | ✅ `ui/board/ChessBoard.kt` |
+| **Smooth board animation** (moved piece slides, no teleport; castling slides the **rook in tandem** with the king) | ✅ `ui/board/ChessBoard.kt` |
+| **Chess.com-style castling** (select king → tap your own rook to castle, or tap the king's destination square) | ✅ `ui/GameScreen.kt` `tap()` |
+| **Phone back button follows the in-app hierarchy** (closes a full-screen flow, then falls back to Home; exits only from Home/sign-in) | ✅ `SystemBackHandler` + `App.kt` |
+| **Quit vs Resign** (before your first move the in-game button is "Quit" → `abort_game`, no rating loss; "Resign" after real moves) | ✅ `ui/GameScreen.kt` |
 | **Sounds** (move/capture/check via SoundPool) | ✅ Android `Sfx.android.kt` · iOS no-op (TODO) |
 | **Notifications** ("your move" via our WebSocket, no Firebase) | ✅ Android `Notify.android.kt` (app backgrounded) · iOS no-op (TODO) |
 | In-app subscription | 🔜 web checkout today; native billing needs Play Console (see below) |
@@ -93,6 +96,6 @@ Remaining:
 2. **iOS parity**: sounds (`AVAudioPlayer`), local notifications (`UNUserNotificationCenter`), app icon / launch art.
 3. Optional **killed-app push** via FCM or an Android foreground service (only if needed beyond the backgrounded-app case).
 
-Done (2026-09): Learn pagination on every tab + a **Chess Theory** tab; the **Lesson Videos** Media tab (56 videos across all Learn categories, Kokoro `af_bella` narration, in-app fullscreen/auto-rotate player); leaderboard QA-account filter; forgot-password + password eye toggle; server-side Stockfish fix after the Docker cutover.
+Done (2026-09): Learn pagination on every tab + a **Chess Theory** tab; the **Lesson Videos** Media tab (56 videos across all Learn categories, Kokoro `af_bella` narration, in-app fullscreen/auto-rotate player); leaderboard QA-account filter; forgot-password + password eye toggle; server-side Stockfish fix after the Docker cutover; **random White/Black assignment** (reads the server `color`); **chess.com-style castling** (tap the rook) with a **tandem rook slide**; **phone-back navigation** (walks the screen stack, exits only from Home); **Quit-before-first-move** (no-loss abort); underpromotion picker. Server-side (no app change needed): **precise elapsed-time clocks** and 20s disconnect-forfeit / no-first-move-abort timers.
 
 The architecture (config → api → socket → screens) is set up so each of these is an additive screen/module, not a rewrite.
