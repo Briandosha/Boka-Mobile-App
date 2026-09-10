@@ -120,7 +120,7 @@ fun ChessBoard(
 
     // ---- Slide animation state ----
     val prog = remember { Animatable(1f) }
-    var slide by remember { mutableStateOf<Slide?>(null) }
+    var slides by remember { mutableStateOf<List<Slide>>(emptyList()) }
 
     val measurer = rememberTextMeasurer()
 
@@ -154,10 +154,24 @@ fun ChessBoard(
                 val toF = lm.second[0] - 'a'
                 val piece = board[toR][toF]
                 if (piece != ' ') {
-                    slide = Slide(lm.second, piece, (fc - tc).toFloat(), (fr - tr).toFloat())
+                    val list = mutableListOf(Slide(lm.second, piece, (fc - tc).toFloat(), (fr - tr).toFloat()))
+                    // Castling moves the rook too — slide it in tandem so it doesn't teleport.
+                    if ((piece == 'K' || piece == 'k') &&
+                        kotlin.math.abs((lm.second[0] - 'a') - (lm.first[0] - 'a')) == 2
+                    ) {
+                        val rankCh = lm.second[1]
+                        val kingside = lm.second[0] == 'g'
+                        val rookFrom = "${if (kingside) 'h' else 'a'}$rankCh"
+                        val rookTo = "${if (kingside) 'f' else 'd'}$rankCh"
+                        val (rfr, rfc) = renderRC(rookFrom, orientation)
+                        val (rtr, rtc) = renderRC(rookTo, orientation)
+                        val rookPiece = board[7 - (rookTo[1] - '1')][rookTo[0] - 'a']
+                        if (rookPiece != ' ') list.add(Slide(rookTo, rookPiece, (rfc - rtc).toFloat(), (rfr - rtr).toFloat()))
+                    }
+                    slides = list
                     prog.snapTo(0f)
                     prog.animateTo(1f, tween(220, easing = FastOutSlowInEasing))
-                    slide = null
+                    slides = emptyList()
                 }
             }
         }
@@ -195,7 +209,7 @@ fun ChessBoard(
 
                     // Pieces as cached raster blits (the sliding one is painted
                     // by the overlay layer instead).
-                    if (p != ' ' && slide?.toSq != sq) {
+                    if (p != ' ' && slides.none { it.toSq == sq }) {
                         drawImage(pieceImage(p, cell.toInt().coerceAtLeast(1)), topLeft = Offset(x, y))
                     }
 
@@ -215,7 +229,7 @@ fun ChessBoard(
         //      which is then only TRANSLATED per frame (graphicsLayer lambda =
         //      layer phase). Like the web board's CSS-transform animation: no
         //      redraw, no layout — the compositor just moves a small texture. ----
-        slide?.let { s ->
+        slides.forEach { s ->
             val (tr, tc) = renderRC(s.toSq, orientation)
             Box(
                 Modifier

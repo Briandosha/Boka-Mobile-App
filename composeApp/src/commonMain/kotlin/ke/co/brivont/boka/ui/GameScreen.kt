@@ -54,7 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ke.co.brivont.boka.AppForeground
 import ke.co.brivont.boka.chess.Position
+import ke.co.brivont.boka.chess.fileOf
 import ke.co.brivont.boka.chess.nameToSquare
+import ke.co.brivont.boka.chess.rankOf
 import ke.co.brivont.boka.chess.squareName
 import ke.co.brivont.boka.data.GameSocket
 import ke.co.brivont.boka.data.extractFen
@@ -361,9 +363,21 @@ fun GameScreen(onBack: () -> Unit) {
                 // server's move_made is deduped against this.
                 sendMove(cur, sq, null)
             }
-        } else if (myTurn && pos!!.legalMoves().any { it.from == nameToSquare(sq) }) {
-            // Tapped another of my own movable pieces — reselect it.
-            selected = sq
+        } else {
+            // chess.com-style castling: with the king selected, tapping your own rook
+            // castles. The engine/server expect the king's two-square move, so map the
+            // tapped rook (h/a file, king's rank) to that king destination (g/c).
+            val castle = if (myTurn) pos!!.legalMoves().firstOrNull { mv ->
+                mv.from == nameToSquare(cur) &&
+                    kotlin.math.abs(fileOf(mv.to) - fileOf(mv.from)) == 2 &&
+                    nameToSquare(sq) == rankOf(mv.from) * 8 + (if (fileOf(mv.to) == 6) 7 else 0)
+            } else null
+            if (castle != null) {
+                sendMove(cur, squareName(castle.to), null)
+            } else if (myTurn && pos!!.legalMoves().any { it.from == nameToSquare(sq) }) {
+                // Tapped another of my own movable pieces — reselect it.
+                selected = sq
+            }
         }
     }
 
