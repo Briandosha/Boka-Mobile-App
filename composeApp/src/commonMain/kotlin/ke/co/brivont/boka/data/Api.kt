@@ -158,6 +158,19 @@ object PuzzleApi {
     suspend fun next(): PuzzleResult = fetch("/api/puzzles/next")
     suspend fun daily(): PuzzleResult = fetch("/api/puzzles/daily")
 
+    /** Record a Puzzle Rush score; the server keeps the personal best. */
+    suspend fun rushResult(score: Int): RushResultDto? = try {
+        authed {
+            httpClient.post(Config.API + "/api/puzzles/rush-result") {
+                bearer()
+                contentType(ContentType.Application.Json)
+                setBody(RushBody(score))
+            }
+        }.body()
+    } catch (e: Throwable) {
+        null
+    }
+
     /** A batch near the user's rating (ascending difficulty) — used for the offline cache and Rush. */
     suspend fun batch(count: Int = 30): List<PuzzleDto>? = try {
         val res = authed { httpClient.get(Config.API + "/api/puzzles/batch?count=$count") { bearer() } }

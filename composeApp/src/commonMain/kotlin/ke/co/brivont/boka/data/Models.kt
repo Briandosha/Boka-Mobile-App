@@ -168,3 +168,9 @@ data class InsightsDto(
 
 @Serializable
 data class PuzzleBatchDto(val puzzles: List<PuzzleDto> = emptyList(), val puzzleRating: Int = 1200)
+
+@Serializable
+data class RushBody(val score: Int)
+
+@Serializable
+data class RushResultDto(val rushBest: Int = 0, val isBest: Boolean = false)

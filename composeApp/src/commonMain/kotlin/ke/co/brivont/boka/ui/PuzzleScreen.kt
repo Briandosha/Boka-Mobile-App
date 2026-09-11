@@ -41,6 +41,8 @@ import ke.co.brivont.boka.ui.board.ChessBoard
 import ke.co.brivont.boka.ui.theme.Boka
 
 private const val PUZZLE_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+private const val RUSH_STRIKES = 3
+private const val RUSH_BATCH = 40
 
 /**
  * Tactics trainer (mobile). Mirrors the web PuzzleModule: it loads a Lichess CC0
@@ -71,6 +73,12 @@ fun PuzzleScreen(onBack: () -> Unit) {
     var offline by remember { mutableStateOf(false) }
     var savedCount by remember { mutableStateOf(0) }
     var queued by remember { mutableStateOf(0) }
+    var rushScore by remember { mutableStateOf(0) }
+    var rushStrikes by remember { mutableStateOf(0) }
+    var rushBest by remember { mutableStateOf(0) }
+    var rushIsBest by remember { mutableStateOf(false) }
+    var rushQueue by remember { mutableStateOf<List<PuzzleDto>>(emptyList()) }
+    var rushPos by remember { mutableStateOf(0) }
 
     fun submit(solved: Boolean) {
         val pid = puzzleId ?: return
@@ -105,7 +113,40 @@ fun PuzzleScreen(onBack: () -> Unit) {
         return true
     }
 
+    fun startRush() {
+        status = "loading"; selected = null; delta = null
+        rushScore = 0; rushStrikes = 0; rushIsBest = false; rushPos = 0
+        scope.launch {
+            val list = PuzzleApi.batch(RUSH_BATCH) ?: emptyList()
+            if (list.isEmpty()) { status = "empty"; return@launch }
+            rushQueue = list
+            if (!applyPuzzle(list[0], "rush")) status = "empty"
+        }
+    }
+
+    fun endRush() {
+        status = "rushover"
+        scope.launch { PuzzleApi.rushResult(rushScore)?.let { rushBest = it.rushBest; rushIsBest = it.isBest } }
+    }
+
+    // Next Rush puzzle after a short beat; tops the queue up if it runs dry.
+    fun advanceRush() {
+        scope.launch {
+            delay(if (status == "solved") 450L else 700L)
+            val next = rushPos + 1
+            if (next >= rushQueue.size) {
+                val more = PuzzleApi.batch(RUSH_BATCH) ?: emptyList()
+                val have = rushQueue.map { it.id }.toHashSet()
+                rushQueue = rushQueue + more.filter { it.id !in have }
+                if (next >= rushQueue.size) { endRush(); return@launch }
+            }
+            rushPos = next
+            if (!applyPuzzle(rushQueue[next], "rush")) endRush()
+        }
+    }
+
     fun load(m: String) {
+        if (m == "rush") { startRush(); return }
         status = "loading"; selected = null; delta = null
         scope.launch {
             when (val r = if (m == "daily") PuzzleApi.daily() else PuzzleApi.next()) {
@@ -138,7 +179,7 @@ fun PuzzleScreen(onBack: () -> Unit) {
 
     LaunchedEffect(Unit) {
         savedCount = OfflinePuzzles.cachedCount(); queued = OfflinePuzzles.pendingCount()
-        PuzzleApi.progress()?.let { rating = it.puzzleRating; streak = it.streak; bestStreak = it.bestStreak }
+        PuzzleApi.progress()?.let { rating = it.puzzleRating; streak = it.streak; bestStreak = it.bestStreak; rushBest = it.rushBest }
     }
     LaunchedEffect(mode) { load(mode) }
 
@@ -150,6 +191,20 @@ fun PuzzleScreen(onBack: () -> Unit) {
                 .filter { squareName(it.from) == cur }
                 .map { squareName(it.to) }.toSet()
         }.getOrDefault(emptySet())
+    }
+
+    fun onWrong() {
+        submit(false)
+        if (mode == "rush") {
+            rushStrikes += 1
+            if (rushStrikes >= RUSH_STRIKES) { endRush(); return }
+            status = "failed"; advanceRush()
+        } else status = "failed"
+    }
+
+    fun onRight() {
+        submit(true)
+        if (mode == "rush") { rushScore += 1; status = "solved"; advanceRush() } else status = "solved"
     }
 
     fun tap(sq: String) {
@@ -170,12 +225,12 @@ fun PuzzleScreen(onBack: () -> Unit) {
         val expected = solution.getOrNull(idx) ?: return
         val promo = if (expected.length == 5) expected[4] else null
         val uci = cur + sq + (promo?.toString() ?: "")
-        if (uci != expected) { status = "failed"; submit(false); return }
+        if (uci != expected) { onWrong(); return }
 
         val after = pos.makeMove(nameToSquare(cur), nameToSquare(sq), promo) ?: return
         idx += 1
         fen = after.toFen(); lastMove = cur to sq
-        if (idx >= solution.size) { status = "solved"; submit(true); return }
+        if (idx >= solution.size) { onRight(); return }
 
         val reply = solution[idx]; idx += 1
         scope.launch {
@@ -183,7 +238,7 @@ fun PuzzleScreen(onBack: () -> Unit) {
             val afterReply = runCatching { Position.fromFen(fen) }.getOrNull()
                 ?.makeMove(nameToSquare(reply.substring(0, 2)), nameToSquare(reply.substring(2, 4)), reply.getOrNull(4)) ?: return@launch
             fen = afterReply.toFen(); lastMove = reply.substring(0, 2) to reply.substring(2, 4)
-            if (idx >= solution.size) { status = "solved"; submit(true) }
+            if (idx >= solution.size) onRight()
         }
     }
 
@@ -194,6 +249,7 @@ fun PuzzleScreen(onBack: () -> Unit) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ModeChip("Practice", mode == "practice") { if (mode != "practice") mode = "practice" else load("practice") }
             ModeChip("Daily", mode == "daily") { if (mode != "daily") mode = "daily" }
+            ModeChip("Rush", mode == "rush") { if (mode != "rush") mode = "rush" else startRush() }
         }
         // Offline status: what's saved locally and what's waiting to sync.
         val offlineNote = when {
@@ -211,9 +267,15 @@ fun PuzzleScreen(onBack: () -> Unit) {
 
         // Stat strip
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatCell("Rating", rating?.toString() ?: "—", Modifier.weight(1f))
-            StatCell("Streak", streak.toString(), Modifier.weight(1f))
-            StatCell("Best", bestStreak.toString(), Modifier.weight(1f))
+            if (mode == "rush") {
+                StatCell("Score", rushScore.toString(), Modifier.weight(1f))
+                StatCell("Strikes", "♥".repeat(RUSH_STRIKES - rushStrikes) + "♡".repeat(rushStrikes), Modifier.weight(1f))
+                StatCell("Best rush", rushBest.toString(), Modifier.weight(1f))
+            } else {
+                StatCell("Rating", rating?.toString() ?: "—", Modifier.weight(1f))
+                StatCell("Streak", streak.toString(), Modifier.weight(1f))
+                StatCell("Best", bestStreak.toString(), Modifier.weight(1f))
+            }
         }
 
         Box(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -236,8 +298,11 @@ fun PuzzleScreen(onBack: () -> Unit) {
             "offline_empty" -> Triple("You're offline and no puzzles are saved yet. Connect once and they'll download automatically.", Boka.textMuted, Boka.surface)
             "offline_daily" -> Triple("The daily puzzle needs a connection. Try Practice \u2014 saved puzzles work offline.", Boka.textMuted, Boka.surface)
             "solving" -> Triple("${if (solverWhite) "White" else "Black"} to move" + (puzzleRatingLabel?.let { " · rated $it" } ?: "") + ". Find the best move.", Boka.text, Boka.surface)
-            "solved" -> Triple("Solved!" + (delta?.let { "  ${if (it >= 0) "+$it" else "$it"}" } ?: ""), Boka.success, Boka.surface)
-            "failed" -> Triple("Not the best move." + (delta?.let { "  $it" } ?: ""), Boka.danger, Boka.surface)
+            "solved" -> if (mode == "rush") Triple("Correct! Next one…", Boka.success, Boka.surface)
+                else Triple("Solved!" + (delta?.let { "  ${if (it >= 0) "+$it" else "$it"}" } ?: ""), Boka.success, Boka.surface)
+            "failed" -> if (mode == "rush") Triple("Strike $rushStrikes of $RUSH_STRIKES. Keep going…", Boka.danger, Boka.surface)
+                else Triple("Not the best move." + (delta?.let { "  $it" } ?: ""), Boka.danger, Boka.surface)
+            "rushover" -> Triple("Run over — you scored $rushScore." + (if (rushIsBest) " New personal best!" else "  Best: $rushBest"), Boka.gold, Boka.surface)
             else -> Triple("", Boka.text, Boka.surface)
         }
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 8.dp)) {
@@ -250,7 +315,8 @@ fun PuzzleScreen(onBack: () -> Unit) {
             when (status) {
                 "solved", "failed" -> if (mode == "practice") PrimaryButton("Next puzzle", { load("practice") }, modifier = Modifier.fillMaxWidth())
                 "empty", "limit", "offline_empty", "offline_daily" -> SecondaryButton("Retry", { load(mode) }, Modifier.fillMaxWidth())
-                "solving" -> SecondaryButton("Skip", { status = "failed"; submit(false) }, Modifier.fillMaxWidth())
+                "solving" -> SecondaryButton(if (mode == "rush") "Skip (strike)" else "Skip", { onWrong() }, Modifier.fillMaxWidth())
+                "rushover" -> PrimaryButton("Play again", { startRush() }, modifier = Modifier.fillMaxWidth())
                 else -> {}
             }
         }
