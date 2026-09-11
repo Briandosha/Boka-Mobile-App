@@ -176,3 +176,11 @@ object PuzzleApi {
         null
     }
 }
+
+object InsightsApi {
+    suspend fun insights(): InsightsDto? = try {
+        authed { httpClient.get(Config.API + "/api/insights") { bearer() } }.body()
+    } catch (e: Throwable) {
+        null
+    }
+}

@@ -131,3 +131,37 @@ data class AttemptResultDto(
 
 @Serializable
 data class AttemptBody(val puzzleId: String, val solved: Boolean)
+
+@Serializable
+data class ByColorDto(val games: Int = 0, val winRate: Int = 0)
+
+@Serializable
+data class ColorSplitDto(val white: ByColorDto = ByColorDto(), val black: ByColorDto = ByColorDto())
+
+@Serializable
+data class GamesInsightDto(
+    val total: Int = 0,
+    val wins: Int = 0,
+    val losses: Int = 0,
+    val draws: Int = 0,
+    val winRate: Int = 0,
+    val byColor: ColorSplitDto = ColorSplitDto(),
+    val lossBreakdown: Map<String, Int> = emptyMap(),
+    val insights: List<String> = emptyList(),
+)
+
+@Serializable
+data class WeaknessDto(
+    val theme: String = "",
+    val label: String = "",
+    val tip: String = "",
+    val attempts: Int = 0,
+    val failRate: Int = 0,
+)
+
+@Serializable
+data class InsightsDto(
+    val headline: String = "",
+    val games: GamesInsightDto = GamesInsightDto(),
+    val puzzleWeaknesses: List<WeaknessDto> = emptyList(),
+)
