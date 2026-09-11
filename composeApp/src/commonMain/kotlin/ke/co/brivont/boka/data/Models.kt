@@ -165,3 +165,6 @@ data class InsightsDto(
     val games: GamesInsightDto = GamesInsightDto(),
     val puzzleWeaknesses: List<WeaknessDto> = emptyList(),
 )
+
+@Serializable
+data class PuzzleBatchDto(val puzzles: List<PuzzleDto> = emptyList(), val puzzleRating: Int = 1200)

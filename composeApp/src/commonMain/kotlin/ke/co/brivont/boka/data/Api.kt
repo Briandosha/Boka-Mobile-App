@@ -158,6 +158,14 @@ object PuzzleApi {
     suspend fun next(): PuzzleResult = fetch("/api/puzzles/next")
     suspend fun daily(): PuzzleResult = fetch("/api/puzzles/daily")
 
+    /** A batch near the user's rating (ascending difficulty) — used for the offline cache and Rush. */
+    suspend fun batch(count: Int = 30): List<PuzzleDto>? = try {
+        val res = authed { httpClient.get(Config.API + "/api/puzzles/batch?count=$count") { bearer() } }
+        if (res.status.isSuccess()) res.body<PuzzleBatchDto>().puzzles else null
+    } catch (e: Throwable) {
+        null
+    }
+
     suspend fun progress(): PuzzleProgressDto? = try {
         authed { httpClient.get(Config.API + "/api/puzzles/progress") { bearer() } }.body()
     } catch (e: Throwable) {

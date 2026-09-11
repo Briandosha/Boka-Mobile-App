@@ -34,6 +34,9 @@ import ke.co.brivont.boka.chess.nameToSquare
 import ke.co.brivont.boka.chess.squareName
 import ke.co.brivont.boka.data.PuzzleApi
 import ke.co.brivont.boka.data.PuzzleResult
+import ke.co.brivont.boka.data.PuzzleDto
+import ke.co.brivont.boka.data.AttemptBody
+import ke.co.brivont.boka.data.OfflinePuzzles
 import ke.co.brivont.boka.ui.board.ChessBoard
 import ke.co.brivont.boka.ui.theme.Boka
 
@@ -65,15 +68,41 @@ fun PuzzleScreen(onBack: () -> Unit) {
     var streak by remember { mutableStateOf(0) }
     var bestStreak by remember { mutableStateOf(0) }
     var delta by remember { mutableStateOf<Int?>(null) }
+    var offline by remember { mutableStateOf(false) }
+    var savedCount by remember { mutableStateOf(0) }
+    var queued by remember { mutableStateOf(0) }
 
     fun submit(solved: Boolean) {
         val pid = puzzleId ?: return
         scope.launch {
-            PuzzleApi.attempt(pid, solved)?.let {
-                rating = it.puzzleRating; delta = it.delta
-                streak = it.streak; bestStreak = it.bestStreak
+            val r = PuzzleApi.attempt(pid, solved)
+            if (r != null) {
+                rating = r.puzzleRating; delta = r.delta
+                streak = r.streak; bestStreak = r.bestStreak
+            } else {
+                // Offline (or a server hiccup): keep the result and sync it later.
+                OfflinePuzzles.enqueue(AttemptBody(pid, solved))
+                queued = OfflinePuzzles.pendingCount()
             }
         }
+    }
+
+    // Set the board up from a puzzle. Returns false if the puzzle is malformed.
+    fun applyPuzzle(p: PuzzleDto, m: String): Boolean {
+        val moves = p.moves.trim().split(" ").filter { it.isNotEmpty() }
+        val start = runCatching { Position.fromFen(p.fen) }.getOrNull() ?: return false
+        if (moves.isEmpty()) return false
+        val setup = moves[0]
+        val after = start.makeMove(nameToSquare(setup.substring(0, 2)), nameToSquare(setup.substring(2, 4)), setup.getOrNull(4)) ?: return false
+        puzzleId = p.id; solution = moves; idx = 1
+        fen = after.toFen(); solverWhite = after.whiteToMove
+        orientation = if (after.whiteToMove) "white" else "black"
+        lastMove = setup.substring(0, 2) to setup.substring(2, 4)
+        puzzleRatingLabel = p.rating
+        p.puzzleRating?.let { rating = it }
+        p.streak?.let { streak = it }
+        status = if (m == "daily" && p.solvedToday == true) "solved" else "solving"
+        return true
     }
 
     fun load(m: String) {
@@ -82,29 +111,35 @@ fun PuzzleScreen(onBack: () -> Unit) {
             when (val r = if (m == "daily") PuzzleApi.daily() else PuzzleApi.next()) {
                 is PuzzleResult.Limit -> status = "limit"
                 is PuzzleResult.Empty -> status = "empty"
-                is PuzzleResult.Error -> status = "empty"
                 is PuzzleResult.Loaded -> {
-                    val p = r.p
-                    val moves = p.moves.trim().split(" ").filter { it.isNotEmpty() }
-                    val start = runCatching { Position.fromFen(p.fen) }.getOrNull()
-                    if (start == null || moves.isEmpty()) { status = "empty"; return@launch }
-                    val setup = moves[0]
-                    val after = start.makeMove(nameToSquare(setup.substring(0, 2)), nameToSquare(setup.substring(2, 4)), setup.getOrNull(4))
-                    if (after == null) { status = "empty"; return@launch }
-                    puzzleId = p.id; solution = moves; idx = 1
-                    fen = after.toFen(); solverWhite = after.whiteToMove
-                    orientation = if (after.whiteToMove) "white" else "black"
-                    lastMove = setup.substring(0, 2) to setup.substring(2, 4)
-                    puzzleRatingLabel = p.rating
-                    p.puzzleRating?.let { rating = it }
-                    p.streak?.let { streak = it }
-                    status = if (m == "daily" && p.solvedToday == true) "solved" else "solving"
+                    offline = false
+                    if (!applyPuzzle(r.p, m)) status = "empty"
+                    // We're online: sync anything solved offline, then top up the offline cache.
+                    OfflinePuzzles.flushPending()
+                    OfflinePuzzles.refillIfLow()
+                    queued = OfflinePuzzles.pendingCount()
+                    savedCount = OfflinePuzzles.cachedCount()
+                }
+                is PuzzleResult.Error -> {
+                    // No connection — fall back to puzzles saved for offline (Practice only;
+                    // the shared Daily puzzle needs the server).
+                    val cached = if (m == "practice") OfflinePuzzles.pop() else null
+                    if (cached != null) {
+                        offline = true
+                        if (!applyPuzzle(cached, m)) status = "empty"
+                        savedCount = OfflinePuzzles.cachedCount()
+                    } else {
+                        status = if (m == "daily") "offline_daily" else "offline_empty"
+                    }
                 }
             }
         }
     }
 
-    LaunchedEffect(Unit) { PuzzleApi.progress()?.let { rating = it.puzzleRating; streak = it.streak; bestStreak = it.bestStreak } }
+    LaunchedEffect(Unit) {
+        savedCount = OfflinePuzzles.cachedCount(); queued = OfflinePuzzles.pendingCount()
+        PuzzleApi.progress()?.let { rating = it.puzzleRating; streak = it.streak; bestStreak = it.bestStreak }
+    }
     LaunchedEffect(mode) { load(mode) }
 
     val targets: Set<String> = remember(fen, selected, status) {
@@ -160,6 +195,19 @@ fun PuzzleScreen(onBack: () -> Unit) {
             ModeChip("Practice", mode == "practice") { if (mode != "practice") mode = "practice" else load("practice") }
             ModeChip("Daily", mode == "daily") { if (mode != "daily") mode = "daily" }
         }
+        // Offline status: what's saved locally and what's waiting to sync.
+        val offlineNote = when {
+            offline -> "Offline \u00b7 playing saved puzzles" + (if (queued > 0) " \u00b7 $queued to sync" else "")
+            savedCount > 0 || queued > 0 -> buildString {
+                if (savedCount > 0) append("$savedCount saved for offline")
+                if (queued > 0) { if (isNotEmpty()) append(" \u00b7 "); append("$queued to sync") }
+            }
+            else -> ""
+        }
+        if (offlineNote.isNotEmpty()) {
+            Text(offlineNote, color = if (offline) Boka.gold else Boka.textMuted, fontSize = 11.sp,
+                fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 18.dp))
+        }
 
         // Stat strip
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -185,6 +233,8 @@ fun PuzzleScreen(onBack: () -> Unit) {
             "loading" -> Triple("Loading…", Boka.textMuted, Boka.surface)
             "empty" -> Triple("Puzzles are still loading on the server. Try again soon.", Boka.textMuted, Boka.surface)
             "limit" -> Triple("That's your free puzzles for today. Go Premium for unlimited.", Boka.textMuted, Boka.surface)
+            "offline_empty" -> Triple("You're offline and no puzzles are saved yet. Connect once and they'll download automatically.", Boka.textMuted, Boka.surface)
+            "offline_daily" -> Triple("The daily puzzle needs a connection. Try Practice \u2014 saved puzzles work offline.", Boka.textMuted, Boka.surface)
             "solving" -> Triple("${if (solverWhite) "White" else "Black"} to move" + (puzzleRatingLabel?.let { " · rated $it" } ?: "") + ". Find the best move.", Boka.text, Boka.surface)
             "solved" -> Triple("Solved!" + (delta?.let { "  ${if (it >= 0) "+$it" else "$it"}" } ?: ""), Boka.success, Boka.surface)
             "failed" -> Triple("Not the best move." + (delta?.let { "  $it" } ?: ""), Boka.danger, Boka.surface)
@@ -199,7 +249,7 @@ fun PuzzleScreen(onBack: () -> Unit) {
         Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 20.dp)) {
             when (status) {
                 "solved", "failed" -> if (mode == "practice") PrimaryButton("Next puzzle", { load("practice") }, modifier = Modifier.fillMaxWidth())
-                "empty", "limit" -> SecondaryButton("Retry", { load(mode) }, Modifier.fillMaxWidth())
+                "empty", "limit", "offline_empty", "offline_daily" -> SecondaryButton("Retry", { load(mode) }, Modifier.fillMaxWidth())
                 "solving" -> SecondaryButton("Skip", { status = "failed"; submit(false) }, Modifier.fillMaxWidth())
                 else -> {}
             }
