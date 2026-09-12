@@ -163,6 +163,8 @@ data class WeaknessDto(
 data class InsightsDto(
     val headline: String = "",
     val games: GamesInsightDto = GamesInsightDto(),
+    val openings: OpeningsDto = OpeningsDto(),
+    val mistakes: MistakesDto = MistakesDto(),
     val puzzleWeaknesses: List<WeaknessDto> = emptyList(),
 )
 
@@ -174,3 +176,57 @@ data class RushBody(val score: Int)
 
 @Serializable
 data class RushResultDto(val rushBest: Int = 0, val isBest: Boolean = false)
+
+@Serializable
+data class OpeningRowDto(val name: String = "", val eco: String = "", val games: Int = 0, val winRate: Int = 0)
+
+@Serializable
+data class FirstMoveRowDto(val family: String = "", val games: Int = 0, val winRate: Int = 0)
+
+@Serializable
+data class OpeningsDto(
+    val weakest: List<OpeningRowDto> = emptyList(),
+    val strongest: List<OpeningRowDto> = emptyList(),
+    val asBlackVs: List<FirstMoveRowDto> = emptyList(),
+    val asWhiteWith: List<FirstMoveRowDto> = emptyList(),
+    val insights: List<String> = emptyList(),
+)
+
+@Serializable
+data class CategoryRowDto(val category: String = "", val label: String = "", val advice: String = "", val count: Int = 0, val share: Int = 0)
+
+@Serializable
+data class PhaseRowDto(val phase: String = "", val count: Int = 0, val share: Int = 0)
+
+@Serializable
+data class ErrorOpeningDto(val name: String = "", val count: Int = 0)
+
+@Serializable
+data class ExampleDto(
+    val gameId: String = "",
+    val ply: Int = 0,
+    val moveNumber: Int = 0,
+    val color: String = "w",
+    val fen: String = "",
+    val played: String = "",
+    val playedUci: String = "",
+    val best: String = "",
+    val bestSan: String = "",
+    val loss: Int = 0,
+    val phase: String = "",
+    val category: String = "",
+    val categoryLabel: String = "",
+    val opening: String = "",
+)
+
+@Serializable
+data class MistakesDto(
+    val total: Int = 0,
+    val analyzedGames: Int = 0,
+    val pendingGames: Int = 0,
+    val byPhase: List<PhaseRowDto> = emptyList(),
+    val byCategory: List<CategoryRowDto> = emptyList(),
+    val errorProneOpenings: List<ErrorOpeningDto> = emptyList(),
+    val examples: List<ExampleDto> = emptyList(),
+    val insights: List<String> = emptyList(),
+)
