@@ -32,6 +32,8 @@ import kotlinx.coroutines.launch
 import ke.co.brivont.boka.chess.Position
 import ke.co.brivont.boka.chess.nameToSquare
 import ke.co.brivont.boka.chess.squareName
+import ke.co.brivont.boka.core.nowEpochSeconds
+import ke.co.brivont.boka.core.provideStore
 import ke.co.brivont.boka.data.PuzzleApi
 import ke.co.brivont.boka.data.PuzzleResult
 import ke.co.brivont.boka.data.PuzzleDto
@@ -87,10 +89,12 @@ fun PuzzleScreen(onBack: () -> Unit) {
             if (r != null) {
                 rating = r.puzzleRating; delta = r.delta
                 streak = r.streak; bestStreak = r.bestStreak
+                if (solved) { val st = provideStore(); st.put("puzzle_last_solve_epoch", nowEpochSeconds().toString()); st.put("puzzle_streak", r.streak.toString()) }
             } else {
                 // Offline (or a server hiccup): keep the result and sync it later.
                 OfflinePuzzles.enqueue(AttemptBody(pid, solved))
                 queued = OfflinePuzzles.pendingCount()
+                if (solved) provideStore().put("puzzle_last_solve_epoch", nowEpochSeconds().toString())
             }
         }
     }

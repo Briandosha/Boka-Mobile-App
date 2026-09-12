@@ -95,6 +95,7 @@ fun App() {
             // was definitively rejected). Also proactively renew a stale token on
             // launch so a long-idle session reconnects instead of silently failing.
             LaunchedEffect(Unit) {
+                scheduleStreakReminder() // daily local nudge if today's puzzle isn't done (no server needed)
                 if (Session.isLoggedIn && accessTokenExpired()) AuthApi.refresh()
                 Session.sessionExpired.collect {
                     user = null; tab = Tab.Home; route = null
@@ -122,7 +123,7 @@ fun App() {
                     Route.Spectate -> SpectateScreen(onBack = { route = null })
                     Route.Media -> MediaScreen(onBack = { route = null })
                     Route.Puzzles -> PuzzleScreen(onBack = { route = null })
-                    Route.Insights -> InsightsScreen(onBack = { route = null }, onPractice = { route = Route.Puzzles })
+                    Route.Insights -> InsightsScreen(onBack = { route = null }, onPractice = { route = Route.Puzzles }, onUpsell = { route = null })
                     is Route.Analysis -> AnalysisScreen(
                         pgn = r.pgn, playerColor = r.color,
                         onBack = { route = null },

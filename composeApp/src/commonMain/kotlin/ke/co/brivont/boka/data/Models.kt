@@ -165,6 +165,7 @@ data class InsightsDto(
     val games: GamesInsightDto = GamesInsightDto(),
     val openings: OpeningsDto = OpeningsDto(),
     val mistakes: MistakesDto = MistakesDto(),
+    val recap: RecapStatusDto? = null,
     val puzzleWeaknesses: List<WeaknessDto> = emptyList(),
 )
 
@@ -185,6 +186,8 @@ data class FirstMoveRowDto(val family: String = "", val games: Int = 0, val winR
 
 @Serializable
 data class OpeningsDto(
+    val locked: Boolean = false,
+    val teaser: String = "",
     val weakest: List<OpeningRowDto> = emptyList(),
     val strongest: List<OpeningRowDto> = emptyList(),
     val asBlackVs: List<FirstMoveRowDto> = emptyList(),
@@ -221,6 +224,8 @@ data class ExampleDto(
 
 @Serializable
 data class MistakesDto(
+    val locked: Boolean = false,
+    val teaser: String = "",
     val total: Int = 0,
     val analyzedGames: Int = 0,
     val pendingGames: Int = 0,
@@ -230,3 +235,6 @@ data class MistakesDto(
     val examples: List<ExampleDto> = emptyList(),
     val insights: List<String> = emptyList(),
 )
+
+@Serializable
+data class RecapStatusDto(val status: String = "")
