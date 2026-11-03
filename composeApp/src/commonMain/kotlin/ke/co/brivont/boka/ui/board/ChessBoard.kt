@@ -109,14 +109,15 @@ fun ChessBoard(
     val checkSquare = remember(fen) { checkSquareOf(fen) }
 
     // Theme tints (read in composition; recolor on theme change). Highlights are
-    // brass selection/last-move, jade legal-move target (brand palette).
+    // amber selection/last-move and dark-ink legal-move dots, which read on both
+    // the cream and the sage-green squares (a green/teal dot vanished on green).
     val lightSq = Boka.lightSquare
     val darkSq = Boka.darkSquare
-    val selectedTint = Color(0x82C8A96B)  // brass
-    val lastMoveTint = Color(0x45C8A96B)  // brass
-    val targetTint = Color(0x8C4FB6A5)     // jade — legal move
+    val selectedTint = Color(0x9EE8A838)  // amber
+    val lastMoveTint = Color(0x6BE8A838)  // amber
+    val targetTint = Color(0x5C142420)     // ink — legal move
     val checkTint = Boka.danger.copy(alpha = 0.55f)
-    val hintTint = Color(0xAA22C55E)       // vivid green — best-move hint
+    val hintTint = Color(0xB03B82F6)       // blue — best-move hint (distinct from amber + green)
 
     // ---- Slide animation state ----
     val prog = remember { Animatable(1f) }

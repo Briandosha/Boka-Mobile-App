@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Fullscreen, no action bar — Compose draws the whole UI. Dark to match Boka. -->
+    <!-- Fullscreen, no action bar — Compose draws the whole UI. Cream so cold start matches the light theme. -->
     <style name="Theme.Boka" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:statusBarColor">#14131A</item>
-        <item name="android:navigationBarColor">#14131A</item>
+        <item name="android:windowBackground">#FBF8F2</item>
+        <item name="android:statusBarColor">#FBF8F2</item>
+        <item name="android:navigationBarColor">#FBF8F2</item>
     </style>
 </resources>

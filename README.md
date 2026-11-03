@@ -18,7 +18,7 @@ composeApp/
     data/Models.kt             # @Serializable DTOs
     data/Api.kt                # AuthApi + GameApi (REST)
     data/GameSocket.kt         # live game / coach WebSocket
-    ui/theme/Theme.kt          # Boka navy+brass palette (Steel light) & typography
+    ui/theme/Theme.kt          # "Boka Fresh" palettes (cream/green/amber; light default) & typography
     ui/board/ChessBoard.kt     # FEN renderer, tap-to-move (+ tap-rook castling), sliding animation, last-move/hint highlights
     ui/*.kt                    # Auth, Dashboard, Leaderboard, MyGames, Game, Coach, Analysis
   src/androidMain/             # MainActivity, manifest, SharedPreferences store
@@ -38,7 +38,7 @@ iosApp/                        # SwiftUI wrapper (needs Xcode project — see be
 | Play Online (live multiplayer via WebSocket, tap-to-move + legal-move dots) | ✅ working (server-validated) |
 | **Spectate** live games (lobby list + read-only live board) | ✅ `ui/SpectateScreen.kt` |
 | **Auth token refresh + forced logout** (WS 4001 / REST 401 → refresh & retry; definitive failure → sign-out; proactive refresh on launch) | ✅ `AuthApi.refresh` · `Session.expire` |
-| Boka theme (navy + brass; Steel light) | ✅ `ui/theme/Theme.kt` |
+| **"Boka Fresh" theme** (cream + green + amber, cream/sage-green board; light default, green-charcoal dark optional) | ✅ `ui/theme/Theme.kt` |
 | **On-device chess engine** (legal moves, make-move, check/mate, SAN) | ✅ `chess/Chess.kt` |
 | **Professional board** (cburnett vector pieces, coords, gold highlights, check) | ✅ `ui/board/{ChessBoard,Pieces}.kt` |
 | **Coach vs Stockfish** (play, coaching, eval bar, move scrubbing) | ✅ working |
@@ -89,7 +89,7 @@ Premium upsell currently routes to the existing **web** payment flow (`App.kt` `
 Kotlin 2.1.0 · Compose Multiplatform 1.7.3 · AGP 8.7.3 · Ktor 3.0.3 · min SDK 26.
 
 ## Roadmap
-Done: navy+brass theme (Steel light) + transparent launcher icon · on-device engine · professional cburnett board · smooth slide animation · Coach vs Stockfish with eval bar, **best-move hint**, and **“change opponent’s move”** training · resume/rejoin in-progress games · pull-to-refresh + hardened token-refresh/forced-logout · move navigation (live + coach) · openings/coaching study · sounds (Android) · WebSocket "your move" notifications (Android) · iOS Xcode project.
+Done: "Boka Fresh" theme (cream/green/amber, light default; replaced the dark navy+brass look in 2026-11) + green launcher icon · on-device engine · professional cburnett board · smooth slide animation · Coach vs Stockfish with eval bar, **best-move hint**, and **“change opponent’s move”** training · resume/rejoin in-progress games · pull-to-refresh + hardened token-refresh/forced-logout · move navigation (live + coach) · openings/coaching study · sounds (Android) · WebSocket "your move" notifications (Android) · iOS Xcode project.
 
 Remaining:
 1. **Native in-app subscription** (web checkout works today — see above).

@@ -28,8 +28,8 @@ private const val WEDGE_D = "M 120.5 60 A 60.5 60.5 0 0 1 60 120.5 L 60 99.5 A 3
 
 @Composable
 fun BokaMark(size: Dp, modifier: Modifier = Modifier) {
-    val ring = if (Boka.isDark) Color(0xFFF5F2EA) else Color(0xFF0F172A)
-    val brass = Color(0xFFC8A96B)
+    val ring = if (Boka.isDark) Color(0xFFFBF8F2) else Color(0xFF2F9E6A)   // cream on dark, green on light
+    val brass = Color(0xFFE8A838)                                                  // amber wedges
 
     // Lower-right wedge (as authored) and the upper-left wedge (same path
     // rotated 180° about the centre 60,60). Parsed once.

@@ -17,13 +17,10 @@ import androidx.compose.ui.unit.sp
 import ke.co.brivont.boka.core.provideStore
 
 /**
- * Boka design system — slate-navy ink + brass, from the official brand package:
- * Ink #0F172A canvas, Slate #1B2740 cards, Steel #334765 borders, Ivory #F5F2EA
- * text, Brass #C8A96B primary accent, Jade #4FB6A5 functional (legal/live/OK).
- * An ivory-paper light variant mirrors the same hues; user-switchable, persisted.
- * Type: the Helvetica-Neue system sans (Android's system face is the licence-free
- * substitute the brand README specifies — Helvetica Neue itself ships only on
- * Apple platforms).
+ * Boka design system — "Boka Fresh" (2026-11): warm cream paper, fresh green
+ * primary, sunny amber highlights, warm wood board. Light is the default; a
+ * lifted green-charcoal dark theme is user-switchable and persisted. Same token
+ * names as before, so every screen adapts unchanged.
  */
 private data class Palette(
     val ground: Color,
@@ -45,53 +42,54 @@ private data class Palette(
     val darkSquare: Color,
 )
 
-// Default — the Boka identity: slate-navy ink with brass.
-private val DarkPalette = Palette(
-    ground = Color(0xFF0F172A),        // Ink
-    surface = Color(0xFF1B2740),       // Slate
-    surfaceAlt = Color(0xFF243352),
-    bgInset = Color(0xFF16213C),
-    border = Color(0xFF2C3A57),
-    borderStrong = Color(0xFF334765),  // Steel
-    text = Color(0xFFF5F2EA),          // Ivory
-    textMuted = Color(0xFFA7B2C8),
-    textFaint = Color(0xFF68779A),
-    accent = Color(0xFFC8A96B),        // Brass
-    accentBright = Color(0xFFD9C391),
-    accentSoft = Color(0x1FC8A96B),
-    success = Color(0xFF4FB6A5),       // Jade
-    warning = Color(0xFFE2B458),
-    danger = Color(0xFFF0635E),
-    lightSquare = Color(0xFFEDE6D4),   // ivory board squares
-    darkSquare = Color(0xFF3D4F76),    // steel-navy board squares
+// Default — "Boka Fresh": warm cream paper, fresh green primary, sunny amber
+// highlights, warm wood board. Bright and friendly; the old navy+brass was dark.
+private val LightPalette = Palette(
+    ground = Color(0xFFFBF8F2),        // warm cream paper
+    surface = Color(0xFFFFFFFF),
+    surfaceAlt = Color(0xFFF6F2E9),
+    bgInset = Color(0xFFF1ECE1),
+    border = Color(0xFFE6E0D3),
+    borderStrong = Color(0xFFCFC7B6),
+    text = Color(0xFF1C2B2A),          // deep green-ink
+    textMuted = Color(0xFF55666A),
+    textFaint = Color(0xFF8A9A9D),
+    accent = Color(0xFF2F9E6A),        // fresh green — primary
+    accentBright = Color(0xFF1F7A50),  // emphasis text
+    accentSoft = Color(0x1F2F9E6A),
+    success = Color(0xFF1E9C84),       // teal-green — live/legal/OK (distinct from primary)
+    warning = Color(0xFFE8A838),       // sunny amber — highlights, badges, streak flame
+    danger = Color(0xFFD9534F),
+    lightSquare = Color(0xFFEDEAD5),   // Boka Fresh board: cream + sage green (the brown wood
+    darkSquare = Color(0xFF75A17B),    // board clashed with the cream/green/amber UI)
 )
 
-// Light variant — ivory paper with the same brass identity.
-private val LightPalette = Palette(
-    ground = Color(0xFFF5F2EA),        // Ivory paper
-    surface = Color(0xFFFFFFFF),
-    surfaceAlt = Color(0xFFF3EFE6),
-    bgInset = Color(0xFFECE7DB),
-    border = Color(0xFFE2DDD0),
-    borderStrong = Color(0xFFCFC8B6),
-    text = Color(0xFF0F172A),          // Ink
-    textMuted = Color(0xFF4C5A74),
-    textFaint = Color(0xFF8391AB),
-    accent = Color(0xFF334765),        // Steel — light-mode primary (brass reserved for dark)
-    accentBright = Color(0xFF26324B),
-    accentSoft = Color(0x22334765),
-    success = Color(0xFF2E8A7B),
-    warning = Color(0xFFA06B1E),
-    danger = Color(0xFFC2453F),
-    lightSquare = Color(0xFFE6EBF2),   // cool steel-blue board — matches the light-mode
-    darkSquare = Color(0xFF7C8FB0),    // Steel accent (dark UI keeps the navy board)
+// Optional dark — lifted out of navy murk: deep green-charcoal, same green + amber.
+private val DarkPalette = Palette(
+    ground = Color(0xFF131C1B),
+    surface = Color(0xFF1C2827),
+    surfaceAlt = Color(0xFF243331),
+    bgInset = Color(0xFF182322),
+    border = Color(0xFF2B3A38),
+    borderStrong = Color(0xFF3A4C49),
+    text = Color(0xFFF2F5F2),
+    textMuted = Color(0xFFA3B2AF),
+    textFaint = Color(0xFF6F807D),
+    accent = Color(0xFF3DBA7E),
+    accentBright = Color(0xFF7FD9A8),
+    accentSoft = Color(0x243DBA7E),
+    success = Color(0xFF3FBFA6),
+    warning = Color(0xFFF0B64C),
+    danger = Color(0xFFF07A72),
+    lightSquare = Color(0xFFEDEAD5),   // same board in dark mode (green-charcoal UI)
+    darkSquare = Color(0xFF75A17B),
 )
 
 /** Theme tokens. Same property names as before so every screen adapts unchanged. */
 object Boka {
-    // Dark (ink+brass) is the default — the Boka identity.
+    // Light ("Boka Fresh") is the default; dark stays available in Profile → Appearance.
     var isDark by mutableStateOf(
-        runCatching { (provideStore().get("theme2") ?: "dark") == "dark" }.getOrDefault(true)
+        runCatching { (provideStore().get("theme2") ?: "light") == "dark" }.getOrDefault(false)
     )
         private set
 
@@ -112,7 +110,9 @@ object Boka {
     val textMuted get() = p.textMuted
     val textFaint get() = p.textFaint
 
-    // Legacy names kept: "gold" = the brass primary, "goldBright" = light-brass emphasis.
+    // Legacy names kept: "gold" = the PRIMARY accent (now fresh green), "goldBright" = emphasis.
+    // For the amber highlight colour use `warning` (or `amber`).
+    val amber get() = p.warning
     val gold get() = p.accent
     val goldBright get() = p.accentBright
     val goldSoft get() = p.accentSoft
@@ -131,18 +131,16 @@ object BokaType {
     var sans: FontFamily = FontFamily.SansSerif
 }
 
-/** The brass hero gradient — the Boka CTA finish. */
+/** The green hero gradient — the Boka CTA finish. */
 object BokaGradient {
-    // Brass hero in dark (the loved look); steel-blue hero in light so it matches
-    // the light-mode Steel accent instead of clashing brass-on-ivory.
     val hero: Brush
         get() = if (Boka.isDark) Brush.linearGradient(
-            0.0f to Color(0xFFD8BC82), 1.0f to Color(0xFFA8894E),
+            0.0f to Color(0xFF4CC98C), 1.0f to Color(0xFF2F9E6A),
         ) else Brush.linearGradient(
-            0.0f to Color(0xFF3E547A), 1.0f to Color(0xFF2B3D5F),
+            0.0f to Color(0xFF3BB07A), 1.0f to Color(0xFF25865A),
         )
-    /** Ink on the brass gradient (dark); white on the steel gradient (light). */
-    val onHero: Color get() = if (Boka.isDark) Color(0xFF0F172A) else Color(0xFFFFFFFF)
+    /** White text on the green gradient in both themes. */
+    val onHero: Color get() = Color(0xFFFFFFFF)
 }
 
 @Composable
@@ -166,7 +164,7 @@ fun BokaTheme(content: @Composable () -> Unit) {
 
     val scheme = if (Boka.isDark) darkColorScheme(
         primary = Boka.gold,
-        onPrimary = Color(0xFF0F172A),     // ink text on brass
+        onPrimary = Color(0xFFFFFFFF),
         secondary = Boka.goldBright,
         background = Boka.ground,
         onBackground = Boka.text,
