@@ -89,7 +89,12 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            // R8: shrinks and optimises the release build (faster startup and smoother
+            // Compose, much smaller APK). Library rules ship with serialization, Ktor,
+            // OkHttp and Media3; ours are belt-and-braces (proguard-rules.pro).
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("testRelease")
         }
     }
